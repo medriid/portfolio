@@ -3,102 +3,139 @@
 import Link from 'next/link';
 import { useEffect, useRef } from 'react';
 import { animate } from 'animejs';
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 export default function Home() {
   const buttonRef = useRef<HTMLAnchorElement>(null);
-  const auroraRef = useRef<HTMLDivElement>(null);
-  const gridRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (buttonRef.current) {
       animate(buttonRef.current, {
-        scale: [0.6, 1],
+        scale: [0.7, 1],
         opacity: [0, 1],
-        duration: 1200,
+        duration: 1100,
         ease: 'out(3)',
       });
 
       animate(buttonRef.current, {
-        translateY: [-6, 6],
+        translateY: [-5, 5],
+        rotateX: [10, -10],
         duration: 2400,
         ease: 'inOut(sine)',
         direction: 'alternate',
         loop: true,
       });
-    }
 
-    if (auroraRef.current) {
-      animate(auroraRef.current, {
-        translateX: [-30, 30],
-        translateY: [-20, 20],
-        rotate: [-6, 6],
-        duration: 14000,
-        ease: 'inOut(sine)',
-        direction: 'alternate',
-        loop: true,
-      });
-    }
-
-    if (gridRef.current) {
-      const lines = gridRef.current.querySelectorAll('.grid-line');
-      lines.forEach((line, index) => {
-        animate(line, {
-          opacity: [0.02, 0.08],
-          duration: 3200,
-          ease: 'inOut(sine)',
-          direction: 'alternate',
-          loop: true,
-          delay: index * 80,
+      const handleDown = () => {
+        animate(buttonRef.current as HTMLAnchorElement, {
+          scale: 0.92,
+          translateY: 2,
+          duration: 120,
+          ease: 'out(2)',
         });
-      });
+      };
+
+      const handleUp = () => {
+        animate(buttonRef.current as HTMLAnchorElement, {
+          scale: 1,
+          translateY: 0,
+          duration: 180,
+          ease: 'out(2)',
+        });
+      };
+
+      buttonRef.current.addEventListener('pointerdown', handleDown);
+      buttonRef.current.addEventListener('pointerup', handleUp);
+      buttonRef.current.addEventListener('pointerleave', handleUp);
+
+      return () => {
+        buttonRef.current?.removeEventListener('pointerdown', handleDown);
+        buttonRef.current?.removeEventListener('pointerup', handleUp);
+        buttonRef.current?.removeEventListener('pointerleave', handleUp);
+      };
     }
   }, []);
 
+  useEffect(() => {
+    if (!canvasRef.current) return;
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x000000);
+
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+    camera.position.set(0, 1.4, 3.2);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    canvasRef.current.appendChild(renderer.domElement);
+
+    const ambient = new THREE.AmbientLight(0xffffff, 0.8);
+    scene.add(ambient);
+
+    const keyLight = new THREE.DirectionalLight(0xffffff, 1.1);
+    keyLight.position.set(2, 4, 3);
+    scene.add(keyLight);
+
+    const loader = new GLTFLoader();
+    const mixerRef: { current: THREE.AnimationMixer | null } = { current: null };
+    let dancer: THREE.Group | null = null;
+
+    loader.load('/assets/dancingchar.glb', (gltf) => {
+      dancer = gltf.scene;
+      dancer.position.set(0, -1.2, 0);
+      dancer.scale.set(1.15, 1.15, 1.15);
+      scene.add(dancer);
+
+      if (gltf.animations.length > 0) {
+        mixerRef.current = new THREE.AnimationMixer(dancer);
+        const action = mixerRef.current.clipAction(gltf.animations[0]);
+        action.play();
+      }
+    });
+
+    const clock = new THREE.Clock();
+
+    const animateFrame = () => {
+      requestAnimationFrame(animateFrame);
+      const delta = clock.getDelta();
+      if (mixerRef.current) {
+        mixerRef.current.update(delta);
+      }
+      if (dancer) {
+        dancer.rotation.y += 0.002;
+      }
+      renderer.render(scene, camera);
+    };
+
+    animateFrame();
+
+    const handleResize = () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    };
+
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      renderer.dispose();
+      canvasRef.current?.removeChild(renderer.domElement);
+    };
+  }, []);
+
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[radial-gradient(circle_at_top,_#1b1f2b_0%,_#0b0d12_45%,_#050608_100%)]">
-      <div
-        ref={auroraRef}
-        className="pointer-events-none absolute -inset-x-24 -top-24 bottom-1/3 opacity-70 blur-3xl"
-        style={{
-          background:
-            'conic-gradient(from 120deg, rgba(99, 229, 255, 0.18), rgba(163, 106, 255, 0.12), rgba(90, 255, 200, 0.12), rgba(99, 229, 255, 0.18))',
-        }}
-      />
-
-      <div className="pointer-events-none absolute inset-0 opacity-[0.08] mix-blend-screen">
-        <div className="h-full w-full bg-[radial-gradient(rgba(255,255,255,0.08)_1px,transparent_1px)] [background-size:120px_120px]" />
-      </div>
-
-      <div
-        ref={gridRef}
-        className="pointer-events-none absolute inset-0"
-        style={{
-          maskImage:
-            'radial-gradient(circle at center, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.4) 45%, transparent 75%)',
-        }}
-        aria-hidden
-      >
-        {[...Array(6)].map((_, i) => (
-          <div
-            key={`h-${i}`}
-            className="grid-line absolute h-px w-full bg-white/5"
-            style={{ top: `${(i + 1) * 14}%`, opacity: 0.02 }}
-          />
-        ))}
-        {[...Array(6)].map((_, i) => (
-          <div
-            key={`v-${i}`}
-            className="grid-line absolute h-full w-px bg-white/5"
-            style={{ left: `${(i + 1) * 14}%`, opacity: 0.02 }}
-          />
-        ))}
-      </div>
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-black">
+      <div ref={canvasRef} className="pointer-events-none absolute inset-0" />
 
       <Link
         ref={buttonRef}
         href="/scene"
         aria-label="Enter scene"
-        className="relative z-10 flex h-16 w-16 items-center justify-center rounded-full border border-white/60 bg-white/10 text-white shadow-[0_18px_40px_rgba(37,129,255,0.25)] transition hover:scale-[1.04]"
+        className="relative z-10 flex h-16 w-16 items-center justify-center rounded-full border border-white/60 bg-white/10 text-white shadow-[0_12px_30px_rgba(255,255,255,0.15)] transition"
         style={{ opacity: 0 }}
       >
         <svg
