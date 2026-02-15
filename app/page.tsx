@@ -5,6 +5,7 @@ import { useEffect, useRef } from 'react';
 import { animate } from 'animejs';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 export default function Home() {
@@ -107,7 +108,11 @@ export default function Home() {
     keyLight.position.set(2, 4, 3);
     scene.add(keyLight);
 
+    const dracoLoader = new DRACOLoader();
+    dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
+
     const loader = new GLTFLoader();
+    loader.setDRACOLoader(dracoLoader);
     const mixerRef: { current: THREE.AnimationMixer | null } = { current: null };
     let dancer: THREE.Group | null = null;
 
@@ -167,22 +172,10 @@ export default function Home() {
         ref={buttonRef}
         href="/scene"
         aria-label="Enter scene"
-        className="relative z-10 flex h-14 w-28 items-center justify-center rounded-xl border border-white/60 bg-white/10 text-white shadow-[0_10px_24px_rgba(255,255,255,0.2)] transition"
+        className="relative z-10 flex h-14 w-28 items-center justify-center rounded-xl border border-white/60 bg-white/10 text-white shadow-[0_10px_24px_rgba(255,255,255,0.2)] transition text-lg font-bold tracking-wider"
         style={{ opacity: 0 }}
       >
-        <svg
-          viewBox="0 0 24 24"
-          className="h-6 w-6"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden
-        >
-          <path d="M5 12h14" />
-          <path d="M13 5l7 7-7 7" />
-        </svg>
+        ENTER
       </Link>
     </div>
   );

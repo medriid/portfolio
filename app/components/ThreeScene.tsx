@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 interface TouchControls {
   up: boolean;
@@ -41,6 +42,7 @@ export default function ThreeScene() {
   const playerVelocityRef = useRef<THREE.Vector3>(new THREE.Vector3(0, 0, 0));
   const isJumpingRef = useRef<boolean>(false);
   const isMobileRef = useRef<boolean>(false);
+  const orbitControlsRef = useRef<OrbitControls | null>(null);
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
@@ -88,6 +90,17 @@ export default function ThreeScene() {
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     containerRef.current.appendChild(renderer.domElement);
     rendererRef.current = renderer;
+
+    const orbitControls = new OrbitControls(camera, renderer.domElement);
+    orbitControls.enableDamping = true;
+    orbitControls.dampingFactor = 0.05;
+    orbitControls.enableZoom = true;
+    orbitControls.enablePan = false;
+    orbitControls.minDistance = 5;
+    orbitControls.maxDistance = 30;
+    orbitControls.maxPolarAngle = Math.PI / 2.2;
+    orbitControls.enabled = true;
+    orbitControlsRef.current = orbitControls;
 
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
     scene.add(ambientLight);
@@ -393,13 +406,12 @@ export default function ThreeScene() {
         playerRef.current.rotation.y = angle;
       }
 
-      const behind = new THREE.Vector3(0, 0, 1).applyQuaternion(playerRef.current.quaternion);
-      const desiredPosition = playerRef.current.position
-        .clone()
-        .add(behind.multiplyScalar(12))
-        .add(new THREE.Vector3(0, 5, 0));
-      camera.position.lerp(desiredPosition, 0.05);
-      camera.lookAt(playerRef.current.position.clone().add(new THREE.Vector3(0, 1, 0)));
+      if (orbitControlsRef.current && playerRef.current) {
+        orbitControlsRef.current.target.copy(
+          playerRef.current.position.clone().add(new THREE.Vector3(0, 1, 0))
+        );
+        orbitControlsRef.current.update();
+      }
 
       renderer.render(scene, camera);
     };
@@ -410,6 +422,11 @@ export default function ThreeScene() {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
       window.removeEventListener('resize', handleResize);
+
+      if (orbitControlsRef.current) {
+        orbitControlsRef.current.dispose();
+        orbitControlsRef.current = null;
+      }
 
       if (isMobileRef.current) {
         const buttons = ['btn-up', 'btn-down', 'btn-left', 'btn-right', 'btn-jump'];
