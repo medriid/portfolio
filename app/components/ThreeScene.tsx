@@ -43,7 +43,6 @@ export default function ThreeScene() {
   const isMobileRef = useRef<boolean>(false);
   const [isMounted, setIsMounted] = useState(false);
 
-  // Detect if device is mobile/tablet
   useEffect(() => {
     const checkMobile = () => {
       const hasTouchSupport = () => {
@@ -65,17 +64,14 @@ export default function ThreeScene() {
     checkMobile();
   }, []);
 
-  // Initialize Three.js scene
   useEffect(() => {
     if (!containerRef.current || !isMounted) return;
 
-    // Scene setup
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x87ceeb);
     scene.fog = new THREE.Fog(0x87ceeb, 500, 2000);
     sceneRef.current = scene;
 
-    // Camera setup
     const camera = new THREE.PerspectiveCamera(
       75,
       window.innerWidth / window.innerHeight,
@@ -86,7 +82,6 @@ export default function ThreeScene() {
     camera.lookAt(0, 0, 0);
     cameraRef.current = camera;
 
-    // Renderer setup
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.shadowMap.enabled = true;
@@ -94,7 +89,6 @@ export default function ThreeScene() {
     containerRef.current.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
-    // Lighting
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
     scene.add(ambientLight);
 
@@ -109,13 +103,11 @@ export default function ThreeScene() {
     directionalLight.shadow.camera.bottom = -500;
     scene.add(directionalLight);
 
-    // Load models
     const loader = new GLTFLoader();
     let terrain: THREE.Group | null = null;
 
-    // Load terrain
     loader.load(
-      '/terrain.glb',
+      '/assets/terrain.glb',
       (gltf) => {
         terrain = gltf.scene;
         terrain.castShadow = true;
@@ -131,7 +123,6 @@ export default function ThreeScene() {
       undefined,
       (error) => {
         console.warn('Could not load terrain.glb:', error);
-        // Add fallback ground plane
         const groundGeometry = new THREE.PlaneGeometry(500, 500);
         const groundMaterial = new THREE.MeshLambertMaterial({ color: 0x228b22 });
         const ground = new THREE.Mesh(groundGeometry, groundMaterial);
@@ -141,9 +132,8 @@ export default function ThreeScene() {
       }
     );
 
-    // Load character
     loader.load(
-      '/character.glb',
+      '/assets/character.glb',
       (gltf) => {
         const character = gltf.scene;
         const playerGroup = new THREE.Group();
@@ -166,7 +156,6 @@ export default function ThreeScene() {
       undefined,
       (error) => {
         console.warn('Could not load character.glb:', error);
-        // Add fallback character
         const characterGeometry = new THREE.BoxGeometry(1, 2, 1);
         const characterMaterial = new THREE.MeshPhongMaterial({ color: 0xff0000 });
         const characterMesh = new THREE.Mesh(characterGeometry, characterMaterial);
@@ -180,7 +169,6 @@ export default function ThreeScene() {
       }
     );
 
-    // Handle window resize
     const handleResize = () => {
       if (!camera || !renderer) return;
       camera.aspect = window.innerWidth / window.innerHeight;
@@ -190,7 +178,6 @@ export default function ThreeScene() {
 
     window.addEventListener('resize', handleResize);
 
-    // Handle keyboard input
     const handleKeyDown = (e: KeyboardEvent) => {
       const key = e.key.toLowerCase();
       if (key === 'w' || key === 'arrowup') keyControlsRef.current.up = true;
@@ -217,23 +204,26 @@ export default function ThreeScene() {
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
 
-    // Mobile touch controls
     const createTouchButton = (
       id: string,
-      label: string,
+      ariaLabel: string,
       x: number,
       y: number,
-      touchKey: keyof TouchControls
+      touchKey: keyof TouchControls,
+      iconSvg: string
     ) => {
       if (!isMobileRef.current) return;
 
       const button = document.createElement('button');
       button.id = id;
-      button.textContent = label;
+      button.setAttribute('aria-label', ariaLabel);
+      button.innerHTML = iconSvg;
       button.style.position = 'fixed';
       button.style.width = '60px';
       button.style.height = '60px';
-      button.style.fontSize = '24px';
+      button.style.display = 'flex';
+      button.style.alignItems = 'center';
+      button.style.justifyContent = 'center';
       button.style.bottom = `${y}px`;
       button.style.right = `${x}px`;
       button.style.backgroundColor = 'rgba(255, 255, 255, 0.7)';
@@ -257,21 +247,52 @@ export default function ThreeScene() {
     };
 
     if (isMobileRef.current) {
-      createTouchButton('btn-up', '▲', 70, 150, 'up');
-      createTouchButton('btn-down', '▼', 70, 70, 'down');
-      createTouchButton('btn-left', '◄', 140, 110, 'left');
-      createTouchButton('btn-right', '▶', 10, 110, 'right');
+      createTouchButton(
+        'btn-up',
+        'Move up',
+        140,
+        150,
+        'up',
+        '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="#111" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5" /><path d="M5 12l7-7 7 7" /></svg>'
+      );
+      createTouchButton(
+        'btn-down',
+        'Move down',
+        140,
+        70,
+        'down',
+        '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="#111" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14" /><path d="M19 12l-7 7-7-7" /></svg>'
+      );
+      createTouchButton(
+        'btn-left',
+        'Move left',
+        210,
+        110,
+        'left',
+        '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="#111" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5" /><path d="M12 19l-7-7 7-7" /></svg>'
+      );
+      createTouchButton(
+        'btn-right',
+        'Move right',
+        70,
+        110,
+        'right',
+        '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="#111" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14" /><path d="M12 5l7 7-7 7" /></svg>'
+      );
 
-      // Jump button
       const jumpButton = document.createElement('button');
       jumpButton.id = 'btn-jump';
-      jumpButton.textContent = 'JUMP';
+      jumpButton.setAttribute('aria-label', 'Jump');
+      jumpButton.innerHTML =
+        '<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#111" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5" /><path d="M5 12l7-7 7 7" /></svg>';
       jumpButton.style.position = 'fixed';
       jumpButton.style.width = '80px';
       jumpButton.style.height = '80px';
-      jumpButton.style.fontSize = '16px';
+      jumpButton.style.display = 'flex';
+      jumpButton.style.alignItems = 'center';
+      jumpButton.style.justifyContent = 'center';
       jumpButton.style.bottom = '20px';
-      jumpButton.style.left = '20px';
+      jumpButton.style.left = '80px';
       jumpButton.style.backgroundColor = 'rgba(200, 100, 255, 0.7)';
       jumpButton.style.border = '2px solid #333';
       jumpButton.style.borderRadius = '50%';
@@ -285,7 +306,7 @@ export default function ThreeScene() {
         if (!isJumpPressed) {
           isJumpPressed = true;
           if (!isJumpingRef.current && playerRef.current) {
-            playerVelocityRef.current.y = 8;
+            playerVelocityRef.current.y = 5.5;
             isJumpingRef.current = true;
           }
         }
@@ -299,11 +320,9 @@ export default function ThreeScene() {
       document.body.appendChild(jumpButton);
     }
 
-    // Raycaster for ground collision detection
     const raycaster = new THREE.Raycaster();
     const downVector = new THREE.Vector3(0, -1, 0);
 
-    // Animation loop
     const animate = () => {
       requestAnimationFrame(animate);
 
@@ -312,14 +331,13 @@ export default function ThreeScene() {
         return;
       }
 
-      // Get current controls
       const isUp = keyControlsRef.current.up || touchControlsRef.current.up;
       const isDown = keyControlsRef.current.down || touchControlsRef.current.down;
       const isLeft = keyControlsRef.current.left || touchControlsRef.current.left;
       const isRight = keyControlsRef.current.right || touchControlsRef.current.right;
       const isSpace = keyControlsRef.current.space;
 
-      const speed = 0.3;
+      const speed = 0.24;
       const moveDirection = new THREE.Vector3(0, 0, 0);
 
       if (isUp) moveDirection.z -= speed;
@@ -327,18 +345,14 @@ export default function ThreeScene() {
       if (isLeft) moveDirection.x -= speed;
       if (isRight) moveDirection.x += speed;
 
-      // Apply movement
       playerVelocityRef.current.x = moveDirection.x;
       playerVelocityRef.current.z = moveDirection.z;
 
-      // Apply gravity
-      const gravity = 0.25;
+      const gravity = 0.22;
       playerVelocityRef.current.y -= gravity;
 
-      // Update position
       playerRef.current.position.add(playerVelocityRef.current);
 
-      // Ground collision detection
       raycaster.ray.origin.copy(playerRef.current.position);
       raycaster.ray.direction.copy(downVector);
 
@@ -352,7 +366,6 @@ export default function ThreeScene() {
           isJumpingRef.current = false;
         }
       } else {
-        // Fallback ground collision (y = 0)
         if (playerRef.current.position.y < 1) {
           playerRef.current.position.y = 1;
           playerVelocityRef.current.y = 0;
@@ -361,28 +374,23 @@ export default function ThreeScene() {
         }
       }
 
-      // Jump
       if (isSpace && isOnGround && !isJumpingRef.current) {
-        playerVelocityRef.current.y = 8;
+        playerVelocityRef.current.y = 5.5;
         isJumpingRef.current = true;
       }
 
-      // Damping for horizontal movement
       playerVelocityRef.current.x *= 0.9;
       playerVelocityRef.current.z *= 0.9;
 
-      // Limit max downward velocity
       if (playerVelocityRef.current.y < -20) {
         playerVelocityRef.current.y = -20;
       }
 
-      // Rotate character to face movement direction
       if (moveDirection.length() > 0) {
         const angle = Math.atan2(moveDirection.x, moveDirection.z);
         playerRef.current.rotation.y = angle;
       }
 
-      // Update camera to follow player
       const cameraOffset = new THREE.Vector3(0, 5, 15);
       cameraOffset.applyAxisAngle(new THREE.Vector3(0, 1, 0), playerRef.current.rotation.y);
       camera.position.lerp(
@@ -396,7 +404,6 @@ export default function ThreeScene() {
 
     animate();
 
-    // Cleanup
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
