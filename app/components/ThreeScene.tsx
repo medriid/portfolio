@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 interface TouchControls {
   up: boolean;
@@ -49,7 +49,6 @@ export default function ThreeScene() {
       const hasTouchSupport = () => {
         return (
           navigator.maxTouchPoints > 0 ||
-          navigator.msMaxTouchPoints > 0 ||
           'ontouchstart' in window
         );
       };
@@ -91,7 +90,7 @@ export default function ThreeScene() {
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFShadowShadowMap;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     containerRef.current.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
