@@ -115,6 +115,7 @@ export default function Home() {
       dancer = gltf.scene;
       dancer.position.set(0, -1.2, 0);
       dancer.scale.set(1.15, 1.15, 1.15);
+      dancer.rotation.y = Math.PI; // Rotate 180 degrees to face away from camera
       scene.add(dancer);
 
       if (gltf.animations.length > 0) {
