@@ -5,10 +5,12 @@ import { useEffect, useRef } from 'react';
 import { animate } from 'animejs';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 export default function Home() {
   const buttonRef = useRef<HTMLAnchorElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
+  const controlsRef = useRef<OrbitControls | null>(null);
 
   useEffect(() => {
     if (buttonRef.current) {
@@ -46,14 +48,30 @@ export default function Home() {
         });
       };
 
+      const handleEnter = () => {
+        if (controlsRef.current) {
+          controlsRef.current.enabled = false;
+        }
+      };
+
+      const handleLeave = () => {
+        if (controlsRef.current) {
+          controlsRef.current.enabled = true;
+        }
+      };
+
       buttonRef.current.addEventListener('pointerdown', handleDown);
       buttonRef.current.addEventListener('pointerup', handleUp);
       buttonRef.current.addEventListener('pointerleave', handleUp);
+      buttonRef.current.addEventListener('pointerenter', handleEnter);
+      buttonRef.current.addEventListener('pointerleave', handleLeave);
 
       return () => {
         buttonRef.current?.removeEventListener('pointerdown', handleDown);
         buttonRef.current?.removeEventListener('pointerup', handleUp);
         buttonRef.current?.removeEventListener('pointerleave', handleUp);
+        buttonRef.current?.removeEventListener('pointerenter', handleEnter);
+        buttonRef.current?.removeEventListener('pointerleave', handleLeave);
       };
     }
   }, []);
@@ -71,6 +89,16 @@ export default function Home() {
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     canvasRef.current.appendChild(renderer.domElement);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.08;
+    controls.enableZoom = true;
+    controls.enablePan = false;
+    controls.minDistance = 1.8;
+    controls.maxDistance = 7;
+    controls.target.set(0, 0.6, 0);
+    controlsRef.current = controls;
 
     const ambient = new THREE.AmbientLight(0xffffff, 0.8);
     scene.add(ambient);
@@ -107,6 +135,7 @@ export default function Home() {
       if (dancer) {
         dancer.rotation.y += 0.002;
       }
+      controls.update();
       renderer.render(scene, camera);
     };
 
@@ -122,6 +151,8 @@ export default function Home() {
 
     return () => {
       window.removeEventListener('resize', handleResize);
+      controls.dispose();
+      controlsRef.current = null;
       renderer.dispose();
       canvasRef.current?.removeChild(renderer.domElement);
     };
@@ -129,13 +160,13 @@ export default function Home() {
 
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-black">
-      <div ref={canvasRef} className="pointer-events-none absolute inset-0" />
+      <div ref={canvasRef} className="absolute inset-0" />
 
       <Link
         ref={buttonRef}
         href="/scene"
         aria-label="Enter scene"
-        className="relative z-10 flex h-16 w-16 items-center justify-center rounded-full border border-white/60 bg-white/10 text-white shadow-[0_12px_30px_rgba(255,255,255,0.15)] transition"
+        className="relative z-10 flex h-14 w-28 items-center justify-center rounded-xl border border-white/60 bg-white/10 text-white shadow-[0_10px_24px_rgba(255,255,255,0.2)] transition"
         style={{ opacity: 0 }}
       >
         <svg

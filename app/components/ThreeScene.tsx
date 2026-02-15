@@ -138,8 +138,8 @@ export default function ThreeScene() {
         const character = gltf.scene;
         const playerGroup = new THREE.Group();
         playerGroup.add(character);
-        playerGroup.scale.set(0.6, 0.6, 0.6);
-        playerGroup.position.set(0, 1.2, 0);
+        playerGroup.scale.set(0.3, 0.3, 0.3);
+        playerGroup.position.set(0, 0.6, 0);
         playerGroup.castShadow = true;
         playerGroup.receiveShadow = true;
 
@@ -164,8 +164,8 @@ export default function ThreeScene() {
 
         const playerGroup = new THREE.Group();
         playerGroup.add(characterMesh);
-        playerGroup.scale.set(0.6, 0.6, 0.6);
-        playerGroup.position.set(0, 1.2, 0);
+        playerGroup.scale.set(0.3, 0.3, 0.3);
+        playerGroup.position.set(0, 0.6, 0);
         scene.add(playerGroup);
         playerRef.current = playerGroup;
       }
@@ -308,7 +308,7 @@ export default function ThreeScene() {
         if (!isJumpPressed) {
           isJumpPressed = true;
           if (!isJumpingRef.current && playerRef.current) {
-            playerVelocityRef.current.y = 4;
+            playerVelocityRef.current.y = 1.33;
             isJumpingRef.current = true;
           }
         }
@@ -339,7 +339,7 @@ export default function ThreeScene() {
       const isRight = keyControlsRef.current.right || touchControlsRef.current.right;
       const isSpace = keyControlsRef.current.space;
 
-      const speed = 0.24;
+      const speed = 0.12;
       const moveDirection = new THREE.Vector3(0, 0, 0);
 
       if (isUp) moveDirection.z -= speed;
@@ -363,13 +363,13 @@ export default function ThreeScene() {
         const intersects = raycaster.intersectObject(terrain, true);
         if (intersects.length > 0 && intersects[0].distance < 2) {
           isOnGround = true;
-          playerRef.current.position.y = intersects[0].point.y + 0.8;
+          playerRef.current.position.y = intersects[0].point.y + 0.5;
           playerVelocityRef.current.y = 0;
           isJumpingRef.current = false;
         }
       } else {
-        if (playerRef.current.position.y < 0.8) {
-          playerRef.current.position.y = 0.8;
+        if (playerRef.current.position.y < 0.5) {
+          playerRef.current.position.y = 0.5;
           playerVelocityRef.current.y = 0;
           isJumpingRef.current = false;
           isOnGround = true;
@@ -377,7 +377,7 @@ export default function ThreeScene() {
       }
 
       if (isSpace && isOnGround && !isJumpingRef.current) {
-        playerVelocityRef.current.y = 4;
+        playerVelocityRef.current.y = 1.33;
         isJumpingRef.current = true;
       }
 
@@ -393,13 +393,13 @@ export default function ThreeScene() {
         playerRef.current.rotation.y = angle;
       }
 
-      const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(playerRef.current.quaternion);
+      const behind = new THREE.Vector3(0, 0, 1).applyQuaternion(playerRef.current.quaternion);
       const desiredPosition = playerRef.current.position
         .clone()
-        .add(forward.multiplyScalar(-10))
-        .add(new THREE.Vector3(0, 4, 0));
-      camera.position.lerp(desiredPosition, 0.08);
-      camera.lookAt(playerRef.current.position.clone().add(new THREE.Vector3(0, 1.5, 0)));
+        .add(behind.multiplyScalar(12))
+        .add(new THREE.Vector3(0, 5, 0));
+      camera.position.lerp(desiredPosition, 0.05);
+      camera.lookAt(playerRef.current.position.clone().add(new THREE.Vector3(0, 1, 0)));
 
       renderer.render(scene, camera);
     };
